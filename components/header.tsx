@@ -43,7 +43,12 @@ export function Header() {
       setUser(session?.user ?? null)
       setLoading(false)
 
-      if (event === "SIGNED_IN") {
+      if (event === "SIGNED_IN" && session?.user) {
+        await fetch('/api/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: session.user })
+        })
         setIsAuthModalOpen(false)
         toast.success("Successfully signed in!")
         router.push("/dashboard")

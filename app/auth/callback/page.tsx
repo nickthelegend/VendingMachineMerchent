@@ -21,8 +21,13 @@ export default function AuthCallback() {
         }
 
         if (data.session) {
+          await fetch('/api/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: data.session.user })
+          })
           toast.success('Successfully signed in!')
-          router.push('/arena')
+          router.push('/dashboard')
         } else {
           router.push('/')
         }
