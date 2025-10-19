@@ -46,12 +46,19 @@ export default function DashboardPage() {
       setUser(session.user)
       
       // Get user from database
-      const userResponse = await fetch('/api/user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user: session.user })
-      })
-      const userData = await userResponse.json()
+      let userResponse = await fetch(`/api/user?email=${session.user.email}`)
+      let userData = await userResponse.json()
+      
+      if (!userData.user) {
+        // Create user only if doesn't exist
+        userResponse = await fetch('/api/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: session.user })
+        })
+        userData = await userResponse.json()
+      }
+      
       setDbUser(userData.user)
 
       // Load machines
@@ -163,7 +170,11 @@ export default function DashboardPage() {
           ) : (
             <div className="grid md:grid-cols-2 gap-6">
               {machines.map((machine) => (
-                <Card key={machine.id} className="glass-card border-gray-700">
+                <Card 
+                  key={machine.id} 
+                  className="glass-card border-gray-700 cursor-pointer hover:border-emerald-500/50 transition-colors"
+                  onClick={() => router.push(`/machine/${machine.id}`)}
+                >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
@@ -177,7 +188,7 @@ export default function DashboardPage() {
                   <CardContent className="space-y-4">
                     <div>
                       <label className="text-gray-400 text-sm">Contract Address</label>
-                      <p className="text-sm font-mono text-gray-300 bg-gray-900/50 px-3 py-2 rounded mt-1">
+                      <p className="text-sm font-mono text-gray-300 bg-gray-900/50 px-3 py-2 rounded mt-1 truncate">
                         {machine.machine_contract_address}
                       </p>
                     </div>
@@ -192,7 +203,10 @@ export default function DashboardPage() {
                           variant="outline"
                           size="icon"
                           className="border-gray-700 hover:bg-gray-800 bg-transparent"
-                          onClick={() => handleCopyApiKey(machine.api_key, machine.id)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleCopyApiKey(machine.api_key, machine.id)
+                          }}
                         >
                           {copiedId === machine.id ? (
                             <Check className="w-4 h-4 text-emerald-400" />

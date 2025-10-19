@@ -2,6 +2,12 @@ import { prisma } from './prisma'
 import { generateAlgorandAccount } from './algorand'
 import type { User } from '@supabase/supabase-js'
 
+export async function getUserByEmail(email: string) {
+  return await prisma.user.findUnique({
+    where: { email }
+  })
+}
+
 export async function createOrGetUser(supabaseUser: User) {
   try {
     const existingUser = await prisma.user.findUnique({
