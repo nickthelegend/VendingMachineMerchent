@@ -7,8 +7,6 @@ import type { User } from "@supabase/supabase-js"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -17,32 +15,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Trash2, Copy, Check } from "lucide-react"
+import { Plus, Copy, Check } from "lucide-react"
 import { toast } from "sonner"
 
-interface VendingMachine {
+interface Machine {
   id: string
-  name: string
-  itemPrice: string
-  apiKey: string
-  createdAt: string
+  api_key: string
+  machine_contract_address: string
+  created_at: string
 }
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
+  const [dbUser, setDbUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [machines, setMachines] = useState<VendingMachine[]>([])
+  const [machines, setMachines] = useState<Machine[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [newMachineName, setNewMachineName] = useState("")
-  const [newMachinePrice, setNewMachinePrice] = useState("")
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { data: { session } } = await supabase.auth.getSession()
 
       if (!session) {
         router.push("/")
@@ -50,63 +44,49 @@ export default function DashboardPage() {
       }
 
       setUser(session.user)
-      setLoading(false)
+      
+      // Get user from database
+      const userResponse = await fetch('/api/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user: session.user })
+      })
+      const userData = await userResponse.json()
+      setDbUser(userData.user)
 
-      // Load mock machines from localStorage
-      const savedMachines = localStorage.getItem(`machines_${session.user.id}`)
-      if (savedMachines) {
-        setMachines(JSON.parse(savedMachines))
-      }
+      // Load machines
+      const machinesResponse = await fetch(`/api/machines?ownerId=${userData.user.id}`)
+      const machinesData = await machinesResponse.json()
+      setMachines(machinesData.machines || [])
+      
+      setLoading(false)
     }
 
     checkUser()
   }, [router])
 
-  const generateApiKey = () => {
-    return `vm_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`
-  }
+  const handleCreateMachine = async () => {
+    if (!dbUser) return
 
-  const handleCreateMachine = () => {
-    if (!newMachineName || !newMachinePrice) {
-      toast.error("Please fill in all fields")
-      return
+    try {
+      const response = await fetch('/api/machines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ownerId: dbUser.id })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        setMachines([data.machine, ...machines])
+        toast.success("Vending machine created successfully!")
+        setIsCreateModalOpen(false)
+      } else {
+        toast.error(data.error || "Failed to create machine")
+      }
+    } catch (error) {
+      toast.error("Failed to create machine")
     }
-
-    if (isNaN(Number(newMachinePrice)) || Number(newMachinePrice) <= 0) {
-      toast.error("Please enter a valid price")
-      return
-    }
-
-    const newMachine: VendingMachine = {
-      id: Math.random().toString(36).substring(2, 15),
-      name: newMachineName,
-      itemPrice: newMachinePrice,
-      apiKey: generateApiKey(),
-      createdAt: new Date().toISOString(),
-    }
-
-    const updatedMachines = [...machines, newMachine]
-    setMachines(updatedMachines)
-
-    if (user) {
-      localStorage.setItem(`machines_${user.id}`, JSON.stringify(updatedMachines))
-    }
-
-    toast.success("Vending machine created successfully!")
-    setIsCreateModalOpen(false)
-    setNewMachineName("")
-    setNewMachinePrice("")
-  }
-
-  const handleDeleteMachine = (id: string) => {
-    const updatedMachines = machines.filter((m) => m.id !== id)
-    setMachines(updatedMachines)
-
-    if (user) {
-      localStorage.setItem(`machines_${user.id}`, JSON.stringify(updatedMachines))
-    }
-
-    toast.success("Vending machine deleted")
   }
 
   const handleCopyApiKey = (apiKey: string, id: string) => {
@@ -139,7 +119,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Your Vending Machines</h1>
-              <p className="text-gray-300">Manage your smart contract vending machines</p>
+              <p className="text-gray-300">Manage your smart contract vending machines ({machines.length} machines)</p>
             </div>
 
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -156,28 +136,6 @@ export default function DashboardPage() {
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Machine Name</Label>
-                    <Input
-                      id="name"
-                      placeholder="e.g., Office Snack Machine"
-                      value={newMachineName}
-                      onChange={(e) => setNewMachineName(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Item Price (ALGO)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      placeholder="e.g., 2.50"
-                      value={newMachinePrice}
-                      onChange={(e) => setNewMachinePrice(e.target.value)}
-                    />
-                  </div>
-
                   <Button className="w-full bg-emerald-500 hover:bg-emerald-400" onClick={handleCreateMachine}>
                     Create Machine
                   </Button>
@@ -209,38 +167,32 @@ export default function DashboardPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-white">{machine.name}</CardTitle>
+                        <CardTitle className="text-white">Machine #{machine.id.slice(-8)}</CardTitle>
                         <CardDescription className="text-gray-400">
-                          Created {new Date(machine.createdAt).toLocaleDateString()}
+                          Created {new Date(machine.created_at).toLocaleDateString()}
                         </CardDescription>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                        onClick={() => handleDeleteMachine(machine.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label className="text-gray-400 text-sm">Item Price</Label>
-                      <p className="text-2xl font-bold text-emerald-400">{machine.itemPrice} ALGO</p>
+                      <label className="text-gray-400 text-sm">Contract Address</label>
+                      <p className="text-sm font-mono text-gray-300 bg-gray-900/50 px-3 py-2 rounded mt-1">
+                        {machine.machine_contract_address}
+                      </p>
                     </div>
 
                     <div>
-                      <Label className="text-gray-400 text-sm">API Key</Label>
+                      <label className="text-gray-400 text-sm">API Key</label>
                       <div className="flex items-center gap-2 mt-1">
                         <code className="flex-1 bg-gray-900/50 px-3 py-2 rounded text-sm text-gray-300 font-mono truncate">
-                          {machine.apiKey}
+                          {machine.api_key}
                         </code>
                         <Button
                           variant="outline"
                           size="icon"
                           className="border-gray-700 hover:bg-gray-800 bg-transparent"
-                          onClick={() => handleCopyApiKey(machine.apiKey, machine.id)}
+                          onClick={() => handleCopyApiKey(machine.api_key, machine.id)}
                         >
                           {copiedId === machine.id ? (
                             <Check className="w-4 h-4 text-emerald-400" />
@@ -249,10 +201,6 @@ export default function DashboardPage() {
                           )}
                         </Button>
                       </div>
-                    </div>
-
-                    <div className="pt-2">
-                      <Button className="w-full bg-emerald-500 hover:bg-emerald-400">Withdraw Funds</Button>
                     </div>
                   </CardContent>
                 </Card>

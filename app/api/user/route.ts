@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await createOrGetUser(supabaseUser)
-    return NextResponse.json({ user })
+    const { private_key, ...safeUser } = user
+    return NextResponse.json({ user: safeUser })
   } catch (error) {
     console.error('User creation error:', error)
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 })
