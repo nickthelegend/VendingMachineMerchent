@@ -22,6 +22,7 @@ interface Machine {
   id: string
   api_key: string
   machine_contract_address: string
+  price: number
   created_at: string
 }
 
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const [machines, setMachines] = useState<Machine[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [price, setPrice] = useState<string>('')
   const router = useRouter()
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function DashboardPage() {
       const response = await fetch('/api/machines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ownerId: dbUser.id })
+        body: JSON.stringify({ ownerId: dbUser.id, price: parseFloat(price) || 0.0 })
       })
       
       const data = await response.json()
@@ -88,6 +90,7 @@ export default function DashboardPage() {
         setMachines([data.machine, ...machines])
         toast.success("Vending machine created successfully!")
         setIsCreateModalOpen(false)
+        setPrice('')
       } else {
         toast.error(data.error || "Failed to create machine")
       }
@@ -143,6 +146,20 @@ export default function DashboardPage() {
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-300 mb-2 block">
+                      Product Price (ALGO)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700 rounded text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
                   <Button className="w-full bg-emerald-500 hover:bg-emerald-400" onClick={handleCreateMachine}>
                     Create Machine
                   </Button>
@@ -180,7 +197,7 @@ export default function DashboardPage() {
                       <div>
                         <CardTitle className="text-white">Machine #{machine.id.slice(-8)}</CardTitle>
                         <CardDescription className="text-gray-400">
-                          Created {new Date(machine.created_at).toLocaleDateString()}
+                          Created {new Date(machine.created_at).toLocaleDateString()} • {machine.price} ALGO
                         </CardDescription>
                       </div>
                     </div>

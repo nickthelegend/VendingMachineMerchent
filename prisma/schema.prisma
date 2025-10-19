@@ -27,6 +27,7 @@ model Machine {
   api_key                 String   @unique
   owner_id                String
   machine_contract_address String
+  price                   Float    @default(0.0)
   created_at              DateTime @default(now())
   updated_at              DateTime @updatedAt
   

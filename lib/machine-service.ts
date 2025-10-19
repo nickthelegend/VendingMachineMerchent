@@ -9,7 +9,7 @@ export function generateMockContractAddress(): string {
   return '0x' + randomBytes(20).toString('hex')
 }
 
-export async function createMachine(ownerId: string) {
+export async function createMachine(ownerId: string, price: number = 0.0) {
   const apiKey = generateApiKey()
   const contractAddress = generateMockContractAddress()
 
@@ -17,7 +17,8 @@ export async function createMachine(ownerId: string) {
     data: {
       api_key: apiKey,
       owner_id: ownerId,
-      machine_contract_address: contractAddress
+      machine_contract_address: contractAddress,
+      price: price
     }
   })
 }

@@ -3,13 +3,13 @@ import { createMachine, getUserMachines } from '@/lib/machine-service'
 
 export async function POST(request: NextRequest) {
   try {
-    const { ownerId } = await request.json()
+    const { ownerId, price } = await request.json()
     
     if (!ownerId) {
       return NextResponse.json({ error: 'Owner ID required' }, { status: 400 })
     }
 
-    const machine = await createMachine(ownerId)
+    const machine = await createMachine(ownerId, price || 0.0)
     return NextResponse.json({ machine })
   } catch (error) {
     console.error('Machine creation error:', error)
