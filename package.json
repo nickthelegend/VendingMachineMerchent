@@ -11,6 +11,7 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
+    "@algorandfoundation/algokit-utils": "^9.1.2",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@prisma/client": "^6.17.1",
@@ -70,7 +71,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "@algorandfoundation/algokit-utils": "^7.0.0",
     "@types/jest": "^29.5.0",
     "@types/node": "^22",
     "@types/react": "^18",

@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [price, setPrice] = useState<string>('')
+  const [isCreating, setIsCreating] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export default function DashboardPage() {
   const handleCreateMachine = async () => {
     if (!dbUser) return
 
+    setIsCreating(true)
     try {
       const response = await fetch('/api/machines', {
         method: 'POST',
@@ -88,14 +90,16 @@ export default function DashboardPage() {
       
       if (response.ok) {
         setMachines([data.machine, ...machines])
-        toast.success("Vending machine created successfully!")
+        toast.success("Smart contract deployed successfully!")
         setIsCreateModalOpen(false)
         setPrice('')
       } else {
-        toast.error(data.error || "Failed to create machine")
+        toast.error(data.error || "Failed to deploy smart contract")
       }
     } catch (error) {
-      toast.error("Failed to create machine")
+      toast.error("Failed to deploy smart contract")
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -160,8 +164,19 @@ export default function DashboardPage() {
                       className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700 rounded text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
-                  <Button className="w-full bg-emerald-500 hover:bg-emerald-400" onClick={handleCreateMachine}>
-                    Create Machine
+                  <Button 
+                    className="w-full bg-emerald-500 hover:bg-emerald-400" 
+                    onClick={handleCreateMachine}
+                    disabled={isCreating}
+                  >
+                    {isCreating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        Deploying Contract...
+                      </>
+                    ) : (
+                      'Create Machine'
+                    )}
                   </Button>
                 </div>
               </DialogContent>
@@ -204,7 +219,7 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <label className="text-gray-400 text-sm">Contract Address</label>
+                      <label className="text-gray-400 text-sm">Smart Contract ID</label>
                       <p className="text-sm font-mono text-gray-300 bg-gray-900/50 px-3 py-2 rounded mt-1 truncate">
                         {machine.machine_contract_address}
                       </p>

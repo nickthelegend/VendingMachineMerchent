@@ -7,3 +7,7 @@ export function generateAlgorandAccount() {
     address: account.addr.toString()
   }
 }
+
+export function mnemonicToAccount(mnemonic: string) {
+  return algosdk.mnemonicToSecretKey(mnemonic)
+}
