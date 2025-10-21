@@ -12,7 +12,9 @@ export function generateApiKey(): string {
 export async function deploySmartContract(privateKey: string, ownerAddress: string, price: number) {
   const algorand = AlgorandClient.testNet()
   const secretKey = Buffer.from(privateKey, 'base64')
-  const deployer = { addr: ownerAddress, sk: secretKey }
+  const mnemonics  = algosdk.secretKeyToMnemonic(secretKey)
+  const deployer  = algosdk.mnemonicToSecretKey(mnemonics)
+
   const signer = algosdk.makeBasicAccountTransactionSigner(deployer)
 
   const appFactory = new MachineContractFactory({
@@ -23,7 +25,7 @@ export async function deploySmartContract(privateKey: string, ownerAddress: stri
 
   const { appClient } = await appFactory.send.create.createApplication({
     args: {
-      ownerAddress: deployer.addr,
+      ownerAddress: deployer.addr.toString(),
       fixedPricing: AlgoAmount.Algos(price).microAlgo,
     },
     sender: deployer.addr,

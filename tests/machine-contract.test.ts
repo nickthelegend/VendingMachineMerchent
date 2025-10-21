@@ -9,8 +9,10 @@ describe('MachineContract Deployment', () => {
 
   beforeAll(async () => {
     // Set up Algorand client for testnet
-    
-
+    const secretKey = Buffer.from("H74d2kNSqOuxd36+OA03Gy9PLlQ2au6pzlzy9Are1742o/gKgRhqmEePN26LFuAfd2wbXOjFuxtFBSNTHE4lRA==", 'base64')
+  const mnemonics  = algosdk.secretKeyToMnemonic(secretKey)
+  const deployers  = algosdk.mnemonicToSecretKey(mnemonics)
+console.log(mnemonics)
     algorand = AlgorandClient.testNet();
 
     // Create account from mnemonic
