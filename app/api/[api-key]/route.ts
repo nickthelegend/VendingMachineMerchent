@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { supabase } from '@/lib/supabase'
 
 export async function GET(
   request: NextRequest,
@@ -8,16 +8,14 @@ export async function GET(
   try {
     const apiKey = params['api-key']
     
-    const machine = await prisma.machine.findUnique({
-      where: { api_key: apiKey },
-      select: {
-        id: true,
-        price: true,
-        machine_contract_address: true
-      }
-    })
+    const { data: machine, error } = await supabase
+      .from('machines')
+      .select('id, price, machine_contract_address')
+      .eq('api_key', apiKey)
+      .single()
 
-    if (!machine) {
+    if (error || !machine) {
+      console.error('Machine not found:', error)
       return NextResponse.json({ 
         success: false,
         price: null 
@@ -26,7 +24,8 @@ export async function GET(
 
     return NextResponse.json({ 
       success: true,
-      price: machine.price 
+      price: machine.price,
+      deviceId: machine.id
     })
   } catch (error) {
     console.error('API key validation error:', error)
