@@ -22,7 +22,7 @@ export async function deploySmartContract(privateKey: string, ownerAddress: stri
     defaultSigner: signer,
     algorand,
   })
-  getApplicationAddress
+  
   const { appClient } = await appFactory.send.create.createApplication({
     args: {
       ownerAddress: deployer.addr.toString(),
