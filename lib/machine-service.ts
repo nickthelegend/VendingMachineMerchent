@@ -2,7 +2,7 @@ import { prisma } from './prisma'
 import { randomBytes } from 'crypto'
 import { AlgorandClient } from '@algorandfoundation/algokit-utils'
 import { MachineContractFactory } from '../client/client'
-import algosdk, { OnApplicationComplete } from 'algosdk'
+import algosdk, { getApplicationAddress, OnApplicationComplete } from 'algosdk'
 import { AlgoAmount } from '@algorandfoundation/algokit-utils/types/amount'
 
 export function generateApiKey(): string {
@@ -22,7 +22,7 @@ export async function deploySmartContract(privateKey: string, ownerAddress: stri
     defaultSigner: signer,
     algorand,
   })
-
+  getApplicationAddress
   const { appClient } = await appFactory.send.create.createApplication({
     args: {
       ownerAddress: deployer.addr.toString(),

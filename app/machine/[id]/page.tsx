@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Copy, Check } from "lucide-react"
 import { toast } from "sonner"
+import algosdk, { getApplicationAddress } from 'algosdk'
 
 interface Machine {
   id: string
@@ -27,6 +28,8 @@ export default function MachinePage() {
   const [machine, setMachine] = useState<Machine | null>(null)
   const [loading, setLoading] = useState(true)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [contractBalance, setContractBalance] = useState<number | null>(null)
+  const [balanceLoading, setBalanceLoading] = useState(false)
 
   useEffect(() => {
     const fetchMachine = async () => {
@@ -36,6 +39,8 @@ export default function MachinePage() {
         
         if (response.ok) {
           setMachine(data.machine)
+          // Fetch contract balance after machine data is loaded
+          await fetchContractBalance(data.machine.machine_contract_address)
         } else {
           toast.error("Machine not found")
           router.push("/dashboard")
@@ -52,6 +57,30 @@ export default function MachinePage() {
       fetchMachine()
     }
   }, [params.id, router])
+
+  const fetchContractBalance = async (contractAddress: string) => {
+    setBalanceLoading(true)
+    try {
+      // Get the application address from the contract address
+      const appAddress = getApplicationAddress(parseInt(contractAddress))
+      
+      // Fetch balance from Algorand testnet
+      const response = await fetch(`https://testnet-api.algonode.cloud/v2/accounts/${appAddress}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch balance')
+      }
+
+      const data = await response.json()
+      const balanceInAlgos = data.amount / 1000000 // Convert microAlgos to Algos
+      setContractBalance(balanceInAlgos)
+    } catch (error) {
+      console.error('Error fetching contract balance:', error)
+      toast.error('Failed to fetch contract balance')
+    } finally {
+      setBalanceLoading(false)
+    }
+  }
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text)
@@ -172,6 +201,32 @@ export default function MachinePage() {
                         <Copy className="w-4 h-4" />
                       )}
                     </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="glass-card border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white">Contract Balance</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Amount of ALGOs stored in the contract
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div>
+                  <label className="text-gray-400 text-sm font-medium">Balance</label>
+                  <div className="mt-1">
+                    {balanceLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-gray-300">Loading...</span>
+                      </div>
+                    ) : (
+                      <p className="text-2xl font-bold text-emerald-400">
+                        {contractBalance !== null ? `${contractBalance.toFixed(6)} ALGO` : 'Failed to load'}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
